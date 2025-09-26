@@ -1,0 +1,9 @@
+streamlit
+opencv-contrib-python-headless
+numpy
+mysql-connector-python
+pandas
+python-dotenv
+plotly
+streamlit-calendar
+streamlit-webrtc
