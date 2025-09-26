@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Add Employee</h2>
+
+{% if message %}
+<div class="status-banner">{{ message }}</div>
+{% endif %}
+{% if error %}
+<div class="error-banner">{{ error }}</div>
+{% endif %}
+
+{% if not employee_name %}
+<h3>Enter Employee Name</h3>
+<form method="POST">
+    <label for="new_employee">Employee Name:</label>
+    <input type="text" id="new_employee" name="new_employee" required>
+    <button type="submit">Set Employee Name</button>
+</form>
+
+<h3>Existing Employees</h3>
+{% if employees %}
+<ul>
+    {% for emp in employees %}
+    <li>{{ emp }}</li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No employees found.</p>
+{% endif %}
+{% else %}
+
+<h3>Capture Images for {{ employee_name }}</h3>
+<p>Select an angle to capture images. You need to capture 10 images per angle (front, left, right).</p>
+<form method="POST">
+    <button type="submit" name="angle" value="front">Capture Front Angle ({{ angles_captured.front }}/10)</button>
+    <button type="submit" name="angle" value="left">Capture Left Angle ({{ angles_captured.left }}/10)</button>
+    <button type="submit" name="angle" value="right">Capture Right Angle ({{ angles_captured.right }}/10)</button>
+</form>
+
+{% if current_angle %}
+<h4>Capturing {{ current_angle | capitalize }} Angle</h4>
+<video id="video" width="640" height="480" autoplay></video>
+<canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+<br>
+<button id="capture">Capture Image</button>
+
+<div class="image-gallery">
+    {% if captured_images %}
+    <h5>Captured Images</h5>
+    {% for img in captured_images %}
+    <div style="display:inline-block; position:relative;">
+        <img src="{{ url_for('static', filename='face_data/' + employee_name + '/' + current_angle + '/' + img) }}" alt="Captured Image" onerror="this.style.display='none';">
+        <form method="POST" action="{{ url_for('delete_image') }}" style="position:absolute; top:0; right:0;">
+            <input type="hidden" name="image_name" value="{{ img }}">
+            <button type="submit" style="background-color:red; color:white; border-radius:50%; width:20px; height:20px; line-height:20px; padding:0;">X</button>
+        </form>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>No images captured yet for this angle.</p>
+    {% endif %}
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureButton = document.getElementById('capture');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(err => {
+            console.error("Error accessing webcam: ", err);
+            alert("Could not access the webcam. Please ensure it is connected and permissions are granted.");
+        });
+
+    captureButton.addEventListener('click', () => {
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL('image/jpeg');
+
+        fetch('/capture_image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image: imageData }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(err => {
+            console.error("Error capturing image: ", err);
+            alert("Failed to capture image.");
+        });
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+    });
+</script>
+{% endif %}
+
+<form method="POST">
+    <button type="submit" name="train_model">Retrain Model and Log Attendance</button>
+</form>
+{% endif %}
+{% endblock %}

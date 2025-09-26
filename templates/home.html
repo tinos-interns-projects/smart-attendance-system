@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Welcome to the Smart Attendance System</h2>
+<p>Use the navigation bar to access different sections of the application.</p>
+<ul>
+    <li><a href="{{ url_for('add_employee') }}">Add a new employee</a></li>
+    <li><a href="{{ url_for('log_attendance') }}">Log or edit attendance</a></li>
+    <li><a href="{{ url_for('admin_panel') }}">Access the admin panel</a></li>
+</ul>
+<p>Current Date and Time: {{ 'now' | datetimeformat('%Y-%m-%d %H:%M:%S') }}</p>
+{% endblock %}
